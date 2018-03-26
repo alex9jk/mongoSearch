@@ -1,0 +1,65 @@
+
+    
+h1 {
+	margin: 0 auto;
+	font-family: arial;
+	width: 50%;
+	padding-bottom: .5em;
+	padding-top: .5em;
+	padding-left: .5em;
+}
+
+.list-group {
+
+width: 50%;
+margin: 0 auto;
+}
+
+.searchStyle {
+	margin: 0 auto;
+	width: 50%;
+	display: flex;
+	padding-bottom: .5em;
+}
+
+.searchStyle input {
+	display: flex;
+
+}
+.button {
+	margin: 0 auto;
+	width: 20%;
+	padding: .75em;
+}
+
+/*input[type='submit'] {
+	margin: 0 auto;
+	width: 100%;
+}*/
+
+p {
+	width: 60%;
+	padding: 2em;
+	margin: 0 auto;
+}
+
+.form-control {
+	width: 60%;
+	margin: 0 auto;	
+	padding-top: .5em;
+		
+}
+.sub {
+	
+	margin-left: 20%;
+	padding: 1em;
+	
+
+}
+
+.comm {
+	margin: 0 auto;
+	width: 60%;
+	padding-bottom: .5em;
+
+}

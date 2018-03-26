@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<link rel ="stylesheet" href="/stylesheets/bootstrap.min.css" type="text/css">
+	<link rel ="stylesheet" href="/stylesheets/style.css" type= "text/css">
+	<link rel = "stylesheet" href= "stylesheets/bootstrap.min.css.map "  type="text/css">
+</head>
+<body>
+
+	<!-- Allow user to return to list of results -->
+  <div class= "button">	<button  onclick="window.location.href='/'">Go back to results</button></div>
+  	<!-- Review document goes here -->
+   	{{{ doc }}}
+
+   	<!-- If review contains comments, list all comments -->
+   	{{#if showComments}}
+   	<p>Comments:</p>
+   	<ul class="comments list-group">
+   		{{#each comments}}
+   			<li class="list-group-item">{{ this }}</li>
+   		{{/each}}
+   	</ul>
+   	{{/if}}
+
+   	<!-- Allow user to add comment to review -->
+   	<form method= "post" action="" class="comForm">
+	   	<p class ="comm" ><strong>Add a comment to the document:</strong></p>
+	   	<textarea class="form-control" name="comment" row="4" cols="50"></textarea>
+	   	<div class= "button"><input type ="submit" value="add comment" /></div>
+   	</form>
+
+</body>
+</html>

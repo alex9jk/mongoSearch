@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<link rel ="stylesheet" href="/stylesheets/bootstrap.min.css" type="text/css">
+	<link rel = "stylesheet" href= "stylesheets/bootstrap.min.css.map "  type="text/css">
+	<link rel ="stylesheet" href="/stylesheets/style.css" type= "text/css">
+</head>
+<body>
+	
+	{{#if searching}}
+	<!-- If search enabled, allow user to query reviews -->
+	<h1>Welcome to our search party!</h1>
+  	<form method="post" class= "searchStyle">
+	   	<input type="text" size="35" name="query" class= "search-query" />
+	   	<input type="submit" value="Search" class="submitButton" />
+	</form>
+	{{else}}
+	<!-- If search disabled, display query results -->
+	<h1>Results for {{ query }}</h1>
+	<div class="button"><button onclick="window.location.href='/?showSearch=true'">Go back to search</button></div>
+	{{/if}}
+	
+	<!-- Query results go here -->
+	{{{ message }}}
+
+</body>
+</html>
