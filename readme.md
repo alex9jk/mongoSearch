@@ -8,11 +8,11 @@
 
 ## Program description: 
 
-A basic search application that queries a Yelp review dataset.
+A basic search application that queries a Yelp review dataset and a Hurricane Sandy tweets dataset.
 
 ## Program functionality:
 
-- Connects to database and shows connection process at startup. 
+- Connects to database and both collections and shows connection process at startup. 
 - Presents user with web-based display that asks the user for a query string, supporting partial words.
 - Response to user's request presents the user with a selection list of reviews answering the request, but not the content of the review.
 - Once presented with the selection list, the user can select the desired document to view the content.
@@ -23,13 +23,15 @@ A basic search application that queries a Yelp review dataset.
 
 ### Set up database
 
-Extract mongo_proj.tar.gz, cd to its root folder, then set up the database:
+Extract mongo_proj.tar.gz, cd to its root folder, then set up the database and the reviews collection:
 
-	mongoimport -u admin -p student --authenticationDatabase admin --db users --collection reviewYelp2  --file review15.json
+    mongoimport -u admin -p student --authenticationDatabase admin --db users --collection reviewYelp2  --file review15.json
 
-If you are using a computer other than the lab computer, you'll need to set `url` in index.js to `mongodb://localhost:27017/users` and set up the database this way:
+If you are using a computer other than the lab computer, you'll need to set `url` in index.js to `mongodb://localhost:27017/users` and set up the database and both collections this way:
 
 	mongoimport --db users --collection reviewYelp2 --file review15.json
+
+    mongoimport --headerline --db users --collection tweets_sandy --type csv --file tweets_sandy.csv
 
 ### Run search application
 

@@ -8,26 +8,53 @@
 <body>
 
 	<!-- Allow user to return to list of results -->
-  <div class= "button">	<button  onclick="window.location.href='/'">Go back to results</button></div>
-  	<!-- Review document goes here -->
-   	{{{ doc }}}
+  <div class= "button">	
+      <button onclick="window.location.href='/showResults'">Go back to results</button>
+  </div>
 
-   	<!-- If review contains comments, list all comments -->
-   	{{#if showComments}}
-   	<p>Comments:</p>
-   	<ul class="comments list-group">
-   		{{#each comments}}
-   			<li class="list-group-item">{{ this }}</li>
-   		{{/each}}
-   	</ul>
-   	{{/if}}
+  <!-- If review was selected, show review --> 
+  {{#if showReview }}
+  <ul class='list-group'>
+    <li class='list-group-item'>Review ID: {{ reviewId }}</li>
+    <li class='list-group-item'>Business ID: {{ businessId }}</li>
+    <li class='list-group-item'>Date: {{ date }}</li>
+    <li class='list-group-item'>Stars: {{ stars }}</li>
+    <li class='list-group-item'>Useful? {{ useful }}</li>
+    <li class= 'list-group-item'>Funny? {{ funny }}</li>
+    <li class='list-group-item'>Cool? {{ cool }}</li>
+  </ul>
+  <p> {{ text }} </p>
+  {{/if}}
 
-   	<!-- Allow user to add comment to review -->
-   	<form method= "post" action="" class="comForm">
-	   	<p class ="comm" ><strong>Add a comment to the document:</strong></p>
-	   	<textarea class="form-control" name="comment" row="4" cols="50"></textarea>
-	   	<div class= "button"><input type ="submit" value="add comment" /></div>
-   	</form>
+  <!-- If tweet was selected, show tweet -->
+  {{#if showTweet }}
+  <ul class='list-group'>
+    <li class='list-group-item'>Tweet ID: {{ tweetId }}</li>
+    <li class='list-group-item'>User handle: {{ userHandle }}</li>
+    <li class='list-group-item'>User name: {{ userName }}</li>
+    <li class= 'list-group-item'>Date: {{ date }}</li>
+    <li class='list-group-item'>Latitude: {{ latitude }}</li>
+    <li class='list-group-item'>Longitude: {{ longitude }}</li>
+  </ul>
+  <p> {{ text }}</p>
+  {{/if}}
+
+  <!-- If review contains comments, list all comments -->
+  {{#if showComments}}
+  <p>Comments:</p>
+  <ul class="comments list-group">
+    {{#each comments}}
+   	<li class="list-group-item">{{ this }}</li>
+   	{{/each}}
+  </ul>
+  {{/if}}
+
+ 	<!-- Allow user to add comment to review -->
+ 	<form method= "post" action="" class="comForm">
+   	<p class ="comm" ><strong>Add a comment to the document:</strong></p>
+   	<textarea class="form-control" name="comment" row="4" cols="50"></textarea>
+   	<div class= "button"><input type ="submit" value="add comment" /></div>
+ 	</form>
 
 </body>
 </html>

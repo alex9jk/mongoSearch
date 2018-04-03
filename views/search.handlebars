@@ -9,15 +9,30 @@
 	
 	{{#if searching}}
 	<!-- If search enabled, allow user to query reviews -->
-	<h1>Welcome to our search party!</h1>
-  	<form method="post" class= "searchStyle">
-	   	<input type="text" size="35" name="query" class= "search-query" />
+	<h1 style="text-align: center">Welcome to our search party!</h1>
+  	<form action="/showResults" method="post" class="searchStyle">
+	   	
+		<input type="text" size="35" name="query" class= "search-query" />
+		
+	   	<!-- Prompt user to choose which database to query -->
+	   	
+		   	<div class= "box">
+				<input type="radio" id="input-1" name="database" value="tweets_sandy" />
+		   		<label for="input-1">Hurricane Sandy tweets</label>
+		   		<br>
+		   		<input type="radio" id="input-2" name="database" value="reviewYelp2" />
+		   		<label for="2">Yelp reviews</label>
+			</div>
+	   	
 	   	<input type="submit" value="Search" class="submitButton" />
+		
 	</form>
 	{{else}}
 	<!-- If search disabled, display query results -->
-	<h1>Results for {{ query }}</h1>
-	<div class="button"><button onclick="window.location.href='/?showSearch=true'">Go back to search</button></div>
+	<h1 style="text-align: center">Results for {{ query }}</h1>
+	<div class="button">
+		<button onclick="window.location.href='/'">Go back to search</button>
+	</div>
 	{{/if}}
 	
 	<!-- Query results go here -->
@@ -25,3 +40,4 @@
 
 </body>
 </html>
+

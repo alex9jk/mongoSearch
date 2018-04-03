@@ -8,7 +8,6 @@ var hbs = exphbs.create({
   // Register helpers that will later aid in rendering layouts
   helpers: {
     message: function() {return '';},
-    doc: function() {return '';}
   }
 });
 app.engine('handlebars', hbs.engine);
@@ -17,146 +16,126 @@ app.set('view engine', 'handlebars');
 app.use(bodyParser.json()); 
 app.use(bodyParser.urlencoded({ extended: true }));
 
-// Set up Mongo client
-var MongoClient = require('mongodb').MongoClient;
-var assert = require('assert');  
-var util=require('util');
-var url = 'mongodb://admin:student@localhost:27017/users?authSource=admin';
-//var url = 'mongodb://localhost:27017/users';
-var dbName = 'users';
-var db;
-var query;
-
-// Connect to Mongo DB users, reviewYelp2 collection
-MongoClient.connect(url, function(err, client) {
- assert.equal(null, err);
-  console.log("Connected successfully to server");
-  db = client.db(dbName);
-  console.log("connected to " + dbName);
-    db.collection("reviewYelp2", { }, function(err, coll) {
-        console.log("connecting to reviewYelp2");
-        if (err !== null) {
-            console.log(err);
-            // Create the collection if it doesn't exist (we don't expect this)
-            db.createCollection("reviewYelp2", function(err, result) {
-                assert.equal(null, err);  
-                console.log("Created reviewYelp2 collection");
-            });
-        }
-        // Index the collection
-        db.ensureIndex("reviewYelp2", { document: "text"}, function(err, indexname) {
-            assert.equal(null, err);
-            console.log("created index for reviewYelp2 collection");
-         });
-    });
-});
-
 // Set up stylesheets
 app.get('/public/stylesheets/bootstrap.min.css', function(req,res) { res.send('public/stylesheets/bootstrap.min.css'); res.end();});
 app.get('/public/stylesheets/bootstrap.css.map', function(req,res) { res.send('public/stylesheets/bootstrap.css.map'); res.end(); });
 app.get('/public/stylesheets/style.css', function(req, res){ res.send('public/stylesheets/style.css'); res.end(); });
 app.use(express.static(path.join(__dirname, '/public')));
 
-// DISPLAY HOME PAGE WITH THE SEARCH FORM / QUERY RESULTS
-app.get("/", function(req, res) { 
-    // If user has not made a query, display only search form,
-    if (!query || req.query.showSearch) {
-        res.render('search', {
-            // Show search 
-            searching: true
-        });
-    } else {
-        // Otherwise retrieve results matching query and display in ascending order by date
-        db.collection('reviewYelp2').find({
-            text: new RegExp(query)
-        }).sort({date: 1}).toArray(function(err, items) {
-            // Render page with list of results
-            res.render('search', {
-                helpers: {
-                    message: function() {return pagelist(items);}
-                },
-                // Hide search 
-                searching: false,
-                // Display what the query was
-                query: query
-            });
-        });
-    }
-});
+// Set up Mongo client
+var MongoClient = require('mongodb').MongoClient;
+var assert = require('assert');  
+var util=require('util');
+var url = 'mongodb://admin:student@localhost:27017/users?authSource=admin';
+// var url = 'mongodb://localhost:27017/users';
+var db;
+var query;
+var currentCollection;
 
-// RETURN MATCHING RESULTS WHEN USER SUBMITS SEARCH QUERY
-app.post("/", function(req, res) {  
-    query = req.body.query;
+connectToDatabase();
 
-    // Find query, sort by date asc
-    db.collection('reviewYelp2').find({
-        text: new RegExp(req.body.query)
-    }).sort({date: 1}).toArray(function(err, items) {
-        console.log('querying database for ' + query);
-        res.render('search', {
-            // Override helper only for this rendering
-            helpers: {
-                message: function() {return pagelist(items);}
-            },
-            // Hide search
-            searching: false,
-            // Display what the query was
-            query: req.body.query
-        });
+// Display home page with search form
+app.get("/", function(req, res) {
+    // Display search form
+    res.render('search', {
+        searching: true
     });
 });
 
-// DISPLAY INDIVIDUAL REVIEW DOCUMENT PAGE 
+// Display results after back button pressed
+app.get("/showResults", function(req, res) {
+    // Show results
+    console.log("Getting results...");
+    showResults(res);
+});
+
+// Display results after search form submitted
+app.post("/showResults", function(req, res) {
+    // Get the user's collection choice
+    chosenCollection = req.body.database;
+    console.log("User chose the database collection " + chosenCollection);
+
+    if (!currentCollection || currentCollection != chosenCollection) {
+        currentCollection = chosenCollection;
+    }
+    
+    // Save query as a global
+    query = req.body.query;
+    // Show results
+    console.log("Posting results...");
+    showResults(res);
+});
+
+
+// Displays individual review
 app.get("/viewReview", function(req, res) {
     // Get review ID from URL
     var reviewID = req.query.reviewID;
 
     // Find review using its review ID
-    db.collection('reviewYelp2').find({
+    db.collection(currentCollection).find({
         review_id: new RegExp(reviewID)
-    }).toArray(function(err, items) {
-        // Check if review contains comments
-        var hasComments = false;
-        if (items[0].comments) {
-            hasComments = true;
-        }
-
-        // Display review on viewItem.handlebars, where {{ doc }} is
-        // Note: Using toArray and items[0], due to potential mongodb duplicity
-        res.render('viewItem', {
-            helpers: {
-                doc: function() { return showDocument(items[0]); }
-            },
-            showComments: hasComments,
-            comments: items[0].comments
-        });
+    }).toArray(function(err, reviews) {
+        // Show first review (necessary in case of mongodb duplicity)
+        showReview(reviews[0], res);
     });
 });
 
-// ACTION TO TAKE AFTER USER SUBMITS COMMENT
+// Adds comment to review and displays updated review
 app.post("/viewReview", function(req, res) {
     // Get comment and review ID
-    var comment = req.body.comment; 
-    var reviewID = req.query.reviewID;  // unsure why it persisted
+    var comment = req.body.comment;
+    var reviewID = req.query.reviewID;
     
-    // Insert comment and display updated document 
-    db.collection('reviewYelp2').findOneAndUpdate(
-        // Document to find
+    // Insert comment and display updated review 
+    db.collection(currentCollection).findOneAndUpdate(
+        // Review to find
         { review_id: new RegExp(reviewID) },
         // Add comment to comments array,
-        // checking if array exists first, if not creates array too
+        // $addToSet checks if array exists first & if nonexistent, creates array 
         { $addToSet: { "comments" : comment } },
-        // Return updated document, not the original
+        // Return updated tweet, not the original
         { returnOriginal: false },
         function(err, result) {
-            res.render('viewItem', {
-                // Display review on viewItem.handlebars, where {{ doc }} is
-                helpers: {
-                    doc: function() { return showDocument(result.value); }
-                },
-                showComments: true,
-                comments: result.value.comments
-            });
+            console.log("Added comment to review " + result.value.review_id);
+            // Show updated review
+            showReview(result.value, res);
+        }
+    );
+});
+
+// Displays individual review
+app.get("/viewTweet", function(req, res) {
+    // Get review ID from URL
+    var tweetID = parseInt(req.query.tweetID);
+
+    // Find review using its review ID
+    db.collection(currentCollection).find({
+        id: tweetID
+    }).toArray(function(err, tweets) {
+        // Show first review (necessary in case of mongodb duplicity)
+        showTweet(tweets[0], res);
+    });
+});
+
+// Adds comment to tweet and displays updated tweet
+app.post("/viewTweet", function(req, res) {
+    // Get comment and tweet ID
+    var comment = req.body.comment;
+    var tweetID = parseInt(req.query.tweetID);
+
+    // Insert comment and display updated tweet
+    db.collection(currentCollection).findOneAndUpdate(
+        // Tweet to find
+        { id: tweetID },
+        // Add comments to comments array
+        { $addToSet: { "comments" : comment }},
+        // Return updated tweet
+        { returnOriginal: false },
+        function(err, result) {
+            console.log("Added comment to tweet " + result.value.id);
+            // Show updated tweet
+            showTweet(result.value, res);
         }
     );
 });
@@ -166,26 +145,137 @@ app.listen(3000, function() {
     console.log("App listening on localhost:3000");
 });
 
-// Creates HTML for individual result document
-function showDocument(docum) {
-     var result = "<ul class='list-group'><li class='list-group-item'>review_id: " + docum.review_id + "</li><li class= 'list-group-item'>business_id: " + 
-     docum.business_id +"</li><li class= 'list-group-item'>Date: " + docum.date +"</li><li class= 'list-group-item'>Stars: " + docum.stars +
-"</li><li class= 'list-group-item'>Useful? " + docum.useful + "</li><li class= 'list-group-item'>Funny? "+ docum.funny +"</li><li class='list-group-item'>Cool? " + 
-docum.cool +"</li></ul><p>" + docum.text + "</p>";
+// Connects to database and both collections, tweets_sandy & reviewYelp2
+function connectToDatabase() {
+    // Connect to Mongo database 'users'
+    MongoClient.connect(url, function(err, client) {
+        assert.equal(null, err);
+        console.log("Connected successfully to server");
+        db = client.db('users');
+        console.log("Connected to users");
 
-    return result;
+        // Connect to 'reviewYelp2' collection
+        db.collection("reviewYelp2", { }, function(err, coll) {
+            console.log("Connecting to reviewYelp2");
+            if (err !== null) {
+                console.log(err);
+            }
+            // Index the 'reviewYelp2' collection based on field "text"
+            db.ensureIndex("reviewYelp2", { document: "text"}, function(err, indexname) {
+                assert.equal(null, err);
+                console.log("Created index for reviewYelp2 collection");
+            });
+        });
+
+        // Connect to 'tweets_sandy' collection 
+        db.collection("tweets_sandy", { }, function(err, coll) {
+            console.log("Connecting to tweets_sandy");
+            if (err !== null) {
+                console.log(err);
+            }
+            // Index the 'tweets_sandy' collection based on field "text"
+            db.ensureIndex("tweets_sandy", { document: "text"}, function(err, indexname) {
+                assert.equal(null, err);
+                console.log("Created index for tweets_sandy collection");
+            });
+        });
+    });
 }
 
 // Creates HTML for list of results 
 function pagelist(items) {
     result = "<div class='list-group'>";
-    items.forEach(function(item) {
-        // Add document description
-        str = "<a href='/viewReview?reviewID=" + item.review_id+"'class="+item.review_id+ " 'list-group-item list-group-item-action' >" + item.date + "    " + item.review_id + "</a></li>";
-        result = result + str;
-    });
+    // If collection is reviewYelp2, format this way
+    if (currentCollection == 'reviewYelp2') {
+        items.forEach(function(item) {
+            // Add document description
+            str = "<a href='/viewReview?reviewID=" + item.review_id + "' class='list-group-item list-group-item-action'>Date: " + item.date + "<br/>Review ID: " + item.review_id + "</a></li>";
+            result = result + str;
+        });
+    } else if (currentCollection == 'tweets_sandy') {
+        // If collection is tweets_sandy, format this way 
+        items.forEach(function(item) {
+            // Add document description
+            str = "<a href='/viewTweet?tweetID=" + item.id + "' class='list-group-item list-group-item-action'>Date: " + item.createdAt + "<br/>User: " + item.fromUser + "</a></li>";
+            result = result + str;
+        });
+    }
+
     result = result + "</div>";
     return result;
 }
 
+// Queries database & shows results matching query
+function showResults(res) {
+    console.log("Showing results...");
 
+    // Show results matching query and display in asc order by date
+    db.collection(currentCollection).find({
+        text: new RegExp(query)
+    }).sort({date: 1}).toArray(function(err, items) {
+        // Render page with list of results
+        res.render('search', {
+            // Pass HTML 
+            helpers: {
+                message: function() {return pagelist(items);}
+            },
+            // Hide search form
+            searching: false,
+            // Display what the query was
+            query: query
+        });
+    });
+}
+
+// Displays review document
+function showReview(review, res) {
+    // Check if review contains comments
+    var hasComments = false;
+    if (review.comments) {
+        hasComments = true;
+    }
+
+    // Show review with viewDocument.handlebars
+    res.render('viewDocument', {
+        showTweet: false,
+        showReview: true,
+        // Show comments if review contains comments
+        showComments: hasComments,
+        comments: review.comments,
+        // Show other pieces of review
+        reviewId: review.review_id,
+        businessId: review.business_id,
+        date: review.date,
+        stars: review.stars,
+        useful: review.useful,
+        funny: review.funny,
+        cool: review.cool,
+        text: review.text
+    });
+}
+
+// Displays tweet document
+function showTweet(tweet, res) {
+    // Check if tweet contains comments
+    var hasComments = false;
+    if (tweet.comments) {
+        hasComments = true;
+    }
+
+    // Show tweet with viewDocument.handlebars
+    res.render('viewDocument', {
+        showTweet: true,
+        showReview: false,
+        // Show comments if tweet contains comments
+        showComments: hasComments,
+        comments: tweet.comments,
+        // Show other pieces of tweet
+        tweetId: tweet.id,
+        userHandle: tweet.fromUser,
+        userName: tweet.fromUserName,
+        date: tweet.createdAt,
+        latitude: tweet.latitude,
+        longitude: tweet.longitude,
+        text: tweet.text
+    });
+}
